@@ -1,0 +1,33 @@
+<%- include("partials/header.ejs") %>
+
+<main>
+    <h1>All repositories</h1>
+
+    <div class="list">
+        <% for (const repo of sortLastModified(repos.values())) { %>
+            <a href="/repo/<%= repo.username %>/<%= repo.repoName %>">
+                <h2><%= repo.username %> / <%= repo.repoName %></h2>
+                <div>
+                    <span><%= repo.branches.size %> branch(es) fuzzed</span>
+                    <span>Last fuzzed <time><%= +repo.lastModified %></time></span>
+                </div>
+            </a>
+        <% } %>
+    </div>
+
+    <h1>All groups</h1>
+
+    <div class="list">
+        <% for (const group of [...groups].sort((a, b) => b[1].lastModified - a[1].lastModified)) { %>
+            <a href="/group/<%= group[0] %>">
+                <code><%= group[1].summary %></code>
+                <div>
+                    <span><%= group[1].entries.length %> results (<%= (group[1].entries.length / entryCount * 100).toFixed(2) %>%)</span>
+                    <span>Last fuzzed <time><%= +group[1].lastModified %></time></span>
+                </div>
+            </a>
+        <% } %>
+    </div>
+</main>
+
+<%- include("partials/footer.ejs") %>

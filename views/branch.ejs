@@ -1,0 +1,19 @@
+<%- include("partials/header.ejs") %>
+
+<main>
+    <h1><%= repo.username %> / <%= repo.repoName %> / <%= branch.name %></h1>
+
+    <div class="list">
+        <% for (const commit of sortLastModified(branch.commits.values())) { %>
+            <a href="/repo/<%= repo.username %>/<%= repo.repoName %>/<%= branch.name %>/commit/<%= commit.sha %>">
+                <h2><%= commit.sha %></h2>
+                <div>
+                    <span><%= commit.entries.length %> fuzzing results</span>
+                    <span>Last fuzzed <time><%= +commit.lastModified %></time></span>
+                </div>
+            </a>
+        <% } %>
+    </div>
+</main>
+
+<%- include("partials/footer.ejs") %>

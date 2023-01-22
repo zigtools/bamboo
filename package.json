@@ -1,0 +1,21 @@
+{
+  "name": "zigtools-bamboo",
+  "version": "1.0.0",
+  "description": "zigtools zls fuzzing infrastructure",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "scss": "sass --watch static/css/index.scss:static/css/style.css --style compressed --no-source-map"
+  },
+  "author": "Auguste Rame",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.254.0",
+    "@aws-sdk/lib-storage": "^3.254.0",
+    "dotenv": "^16.0.3",
+    "ejs": "^3.1.8",
+    "express": "^4.18.2",
+    "fflate": "^0.7.4"
+  }
+}

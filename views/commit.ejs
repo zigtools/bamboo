@@ -1,0 +1,27 @@
+<%- include("partials/header.ejs") %>
+
+<main>
+    <h1><%= repo.username %> / <%= repo.repoName %> / <%= branch.name %></h1>
+
+    <div class="list">
+        <% for (const entry of sortLastModified(commit.entries)) { %>
+            <div>
+                <code><%= groups.get(entry.group).summary %></code>
+                <div>
+                    <time><%= +entry.lastModified %></time>
+                    <span>Zig <%= entry.zigVersion %></span>
+                    <span>ZLS <%= entry.zlsVersion %></span>
+                    <br>
+                    <span>
+                        <a href="/entry/<%= +entry.lastModified %>/stderr.log">Error</a>
+                        <a href="/entry/<%= +entry.lastModified %>/stdin.log">Input</a>
+                        <a href="/entry/<%= +entry.lastModified %>/stdout.log">Output</a>
+                        <a href="/entry/<%= +entry.lastModified %>/principal.zig">Principal</a>
+                    </span>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</main>
+
+<%- include("partials/footer.ejs") %>
