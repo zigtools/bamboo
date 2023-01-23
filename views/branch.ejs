@@ -6,10 +6,11 @@
     <div class="list">
         <% for (const commit of sortLastModified(branch.commits.values())) { %>
             <a href="/repo/<%= repo.username %>/<%= repo.repoName %>/<%= branch.name %>/commit/<%= commit.sha %>">
-                <h2><%= commit.sha %></h2>
-                <div>
-                    <span><%= commit.entries.length %> fuzzing results</span>
-                    <span>Last fuzzed <time><%= +commit.lastModified %></time></span>
+                <div class="summary">
+                    <h2><%= commit.sha %></h2>
+                    <div>
+                        <span><%= commit.entries.length %> &bull; <time><%= +commit.lastModified %></time></span>
+                    </div>
                 </div>
             </a>
         <% } %>

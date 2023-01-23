@@ -20,7 +20,6 @@ app.get("/", (req, res) => {
     res.render("index.ejs", {
         repos,
         groups,
-        entryCount: entries.length,
         ...utils,
     });
 });

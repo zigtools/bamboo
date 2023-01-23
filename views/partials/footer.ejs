@@ -1,5 +1,43 @@
 <script>
-    [...document.querySelectorAll("time")].map(_ => _.innerText = (new Date(+_.innerText)).toLocaleString());
+    const formatter = new Intl.RelativeTimeFormat(undefined, {
+        numeric: "auto"
+    })
+    
+    const DIVISIONS = [
+        { amount: 60, name: "seconds" },
+        { amount: 60, name: "minutes" },
+        { amount: 24, name: "hours" },
+        { amount: 7, name: "days" },
+        { amount: 4.34524, name: "weeks" },
+        { amount: 12, name: "months" },
+        { amount: Number.POSITIVE_INFINITY, name: "years" }
+    ];
+    
+    function formatTimeAgo(date) {
+        let duration = (date - new Date()) / 1000
+        
+        for (let i = 0; i <= DIVISIONS.length; i++) {
+            const division = DIVISIONS[i]
+            if (Math.abs(duration) < division.amount) {
+                return formatter.format(Math.round(duration), division.name)
+            }
+            duration /= division.amount
+        }
+    }
+
+    [...document.querySelectorAll("time")].map(_ => {
+        _.title = (new Date(+_.innerText)).toLocaleString();
+        _.innerText = formatTimeAgo(new Date(+_.innerText));
+    });
+
+    document.addEventListener("click", event => {
+        const target = event.target;
+
+        const details = target.closest(".list .summary");
+        if (details) {
+            details.parentElement.classList.toggle("expanded");
+        }
+    });
 </script>
 
 </body>

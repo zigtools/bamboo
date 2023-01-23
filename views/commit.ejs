@@ -2,22 +2,31 @@
 
 <main>
     <h1><%= repo.username %> / <%= repo.repoName %> / <%= branch.name %></h1>
+    <h2><%= commit.sha %></h2>
 
     <div class="list">
         <% for (const entry of sortLastModified(commit.entries)) { %>
-            <div>
-                <code><%= groups.get(entry.group).summary %></code>
-                <div>
-                    <time><%= +entry.lastModified %></time>
-                    <span>Zig <%= entry.zigVersion %></span>
-                    <span>ZLS <%= entry.zlsVersion %></span>
-                    <br>
-                    <span>
-                        <a href="/entry/<%= +entry.lastModified %>/stderr.log">Error</a>
-                        <a href="/entry/<%= +entry.lastModified %>/stdin.log">Input</a>
-                        <a href="/entry/<%= +entry.lastModified %>/stdout.log">Output</a>
-                        <a href="/entry/<%= +entry.lastModified %>/principal.zig">Principal</a>
-                    </span>
+            <div class="dropdown">
+                <div class="summary">
+                    <code><%= groups.get(entry.group).summary %></code>
+                    <div>
+                        <time><%= +entry.lastModified %></time>
+                    </div>
+                </div>
+
+                <div class="details">
+                    <p style="margin-top: 0;">
+                        <code>Zig <%= entry.zigVersion %></code> <br>
+                        <code>ZLS <%= entry.zlsVersion %></code>
+                    </p>
+                    
+                    <p style="margin-bottom: 0;">
+                        <a style="margin-right: 10px;" href="/entry/<%= +entry.lastModified %>.tar.gz">Complete Archive</a>
+                        <a style="margin-right: 10px;" href="/entry/<%= +entry.lastModified %>/stderr.log">Error</a>
+                        <a style="margin-right: 10px;" href="/entry/<%= +entry.lastModified %>/stdin.log">Input</a>
+                        <a style="margin-right: 10px;" href="/entry/<%= +entry.lastModified %>/stdout.log">Output</a>
+                        <a style="margin-right: 10px;" href="/entry/<%= +entry.lastModified %>/principal.zig">Principal</a>
+                    </p>
                 </div>
             </div>
         <% } %>

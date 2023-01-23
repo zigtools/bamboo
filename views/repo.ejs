@@ -6,10 +6,11 @@
     <div class="list">
         <% for (const branch of sortLastModified(repo.branches.values())) { %>
             <a href="/repo/<%= repo.username %>/<%= repo.repoName %>/<%= branch.name %>">
-                <h2><%= branch.name %></h2>
-                <div>
-                    <span><%= branch.commits.size %> commit(s) fuzzed</span>
-                    <span>Last fuzzed <time><%= +branch.lastModified %></time></span>
+                <div class="summary">
+                    <h2><%= branch.name %></h2>
+                    <div>
+                        <span><%= branch.commits.size %> commits &bull; <time><%= +branch.lastModified %></time></span>
+                    </div>
                 </div>
             </a>
         <% } %>
