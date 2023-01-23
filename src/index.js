@@ -7,9 +7,16 @@ import { createGzip, createInflateRaw } from "zlib";
  * @type {Map<string, Group>}
  */
 let groups = new Map();
-const { repos, entries, entryMap } = await update();
+let { repos, entries, entryMap } = await update();
 
 createGroupings(groups, entries);
+
+// Pull new data every 5 minutes
+setInterval(async () => {
+    groups = new Map();
+    ({ repos, entries, entryMap } = await update());
+    createGroupings(groups, entries);
+}, 300000);
 
 const app = express();
 
