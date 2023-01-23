@@ -13,9 +13,14 @@ createGroupings(groups, entries);
 
 // Pull new data every 5 minutes
 setInterval(async () => {
-    groups = new Map();
-    ({ repos, entries, entryMap } = await update());
-    createGroupings(groups, entries);
+    let newGroups = new Map();
+    let { newRepos, newEntries, newEntryMap } = await update();
+    await createGroupings(newGroups, newEntries);
+
+    repos = newRepos;
+    entries = newEntries;
+    entryMap = newEntryMap;
+    groups = newGroups;
 }, 300000);
 
 const app = express();
