@@ -1,7 +1,7 @@
 <%- include("partials/header.ejs") %>
 
 <main>
-    <h1><%= repo.username %> / <%= repo.repoName %> / <%= branch.name %></h1>
+    <h1><a href="/repo/<%= repo.username %>/<%= repo.repoName %>"><%= repo.username %> / <%= repo.repoName %></a> / <%= branch.name %></h1>
 
     <div class="list">
         <% for (const commit of sortLastModified(branch.commits.values())) { %>

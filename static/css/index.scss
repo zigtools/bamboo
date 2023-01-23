@@ -73,7 +73,11 @@ main {
         letter-spacing: -0.021em;
     }
 
-    p, a {
+    a {
+        color: white;
+    }
+
+    p {
         color: white;
         font-size: 14pt;
         letter-spacing: -0.011em;
@@ -148,6 +152,9 @@ main {
             display: none;
 
             padding: 20px;
+
+            &>*:first-child {margin-top: 0;}
+            &>*:last-child {margin-bottom: 0;}
         }
 
         &.expanded {
@@ -162,6 +169,12 @@ main {
             &>.details {
                 display: block;
             }
+        }
+
+        .link-list {
+            display: flex;
+
+            gap: 20px;
         }
     }
 }

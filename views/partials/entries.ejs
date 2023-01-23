@@ -1,0 +1,50 @@
+<div class="list">
+    <% for (const entry of sortLastModified(entries)) { %>
+        <%
+            const commit = entry.commit;
+            const branch = commit.branch;
+            const repo = branch.repo;
+        %>
+        <div class="dropdown">
+            <div class="summary">
+                <code><%= groups.get(entry.group).summary %></code>
+                <div>
+                    <time><%= +entry.lastModified %></time>
+                </div>
+            </div>
+
+            <div class="details">
+                <p>
+                    <code>
+                        <a href="/repo/<%= repo.username %>/<%= repo.repoName %>"><%= repo.username %>/<%= repo.repoName %></a>
+                        -> <a href="/repo/<%= repo.username %>/<%= repo.repoName %>/<%= branch.name %>"><%= branch.name %></a>
+                        -> <a href="/repo/<%= repo.username %>/<%= repo.repoName %>/<%= branch.name %>/commit/<%= commit.sha %>"><%= commit.sha %></a>
+                    </code>
+                </p>
+
+                <p>
+                    <code>
+                        In <a href="/group/<%= entry.group %>">group <%= entry.group %></a>
+                    </code>
+                </p>
+
+                <p>
+                    <code>Zig <%= entry.zigVersion %></code> <br>
+                    <code>ZLS <%= entry.zlsVersion %></code>
+                </p>
+                
+                <p class="link-list">
+                    <span>
+                        Complete Archive
+                        (<a href="/entry/<%= +entry.lastModified %>.tar.gz">.tar.gz</a>)
+                        (<a href="/entry/<%= +entry.lastModified %>.zip">.zip</a>)
+                    </span>
+                    <a href="/entry/<%= +entry.lastModified %>/stderr.log">Error</a>
+                    <a href="/entry/<%= +entry.lastModified %>/stdin.log">Input</a>
+                    <a href="/entry/<%= +entry.lastModified %>/stdout.log">Output</a>
+                    <a href="/entry/<%= +entry.lastModified %>/principal.zig">Principal</a>
+                </p>
+            </div>
+        </div>
+    <% } %>
+</div>

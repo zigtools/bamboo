@@ -146,6 +146,10 @@ export class Group {
     /**
      * @type {string}
      */
+    hash;
+    /**
+     * @type {string}
+     */
     summary;
     /**
      * @type {Entry[]}
@@ -156,7 +160,8 @@ export class Group {
      */
     lastModified;
 
-    constructor(summary) {
+    constructor(hash, summary) {
+        this.hash = hash;
         this.summary = summary;
         this.entries = [];
         this.lastModified = new Date(0);
@@ -344,7 +349,7 @@ export function grabData(groups, entry) {
 
             if (!entry.group) await fs.appendFile(".logcache", `${key} ${hash(summary)} ${entry.zigVersion} ${entry.zlsVersion}\n`);
             entry.group = hash(summary);
-            if (!groups.has(entry.group)) groups.set(entry.group, new Group(summary));
+            if (!groups.has(entry.group)) groups.set(entry.group, new Group(entry.group, summary));
             resolve();
         });
     });

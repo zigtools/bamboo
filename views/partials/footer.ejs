@@ -33,9 +33,9 @@
     document.addEventListener("click", event => {
         const target = event.target;
 
-        const details = target.closest(".list .summary");
-        if (details) {
-            details.parentElement.classList.toggle("expanded");
+        const summary = target.closest(".list .summary");
+        if (summary && summary.nextElementSibling) {
+            summary.parentElement.classList.toggle("expanded");
         }
     });
 </script>

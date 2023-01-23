@@ -1,0 +1,9 @@
+<%- include("partials/header.ejs") %>
+
+<main>
+    <h1>Group <%= group.hash %></h1>
+
+    <%- include("partials/entries.ejs", {entries: group.entries}) %>
+</main>
+
+<%- include("partials/footer.ejs") %>
