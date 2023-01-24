@@ -22,5 +22,10 @@
 
     <div id="nav__links">
         <a href="/">Home</a>
+        <% if (session.username) { %>
+            <span><%= session.username %> &bull; <%= session.isZigtoolsMember ? "Member" : "Guest" %> (<a href="/logout">Log Out</a>)</span>
+        <% } else { %>
+            <a href="/login">Login</a>
+        <% } %>
     </div>
 </nav>

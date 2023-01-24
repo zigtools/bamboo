@@ -1,6 +1,6 @@
 import { default as dotenv } from "dotenv";
 dotenv.config();
-import { S3, ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3, ListObjectsV2Command, GetObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { Inflate } from "fflate";
 import { createHash } from "crypto";
 import { promises as fs } from "fs";
@@ -150,6 +150,10 @@ export class Group {
     /**
      * @type {string}
      */
+    full;
+    /**
+     * @type {string}
+     */
     summary;
     /**
      * @type {Entry[]}
@@ -160,8 +164,9 @@ export class Group {
      */
     lastModified;
 
-    constructor(hash, summary) {
+    constructor(hash, full, summary) {
         this.hash = hash;
+        this.full = full;
         this.summary = summary;
         this.entries = [];
         this.lastModified = new Date(0);
@@ -254,8 +259,10 @@ export async function update() {
             entryMap.set(split[4], entry);
         }
 
-        if (!out.ContinuationToken) break;
-        continuationToken = out.ContinuationToken;
+        if (!out.NextContinuationToken) {
+            break;
+        }
+        continuationToken = out.NextContinuationToken;
     }
 
     return { entries, entryMap, repos: repositories };
@@ -349,7 +356,7 @@ export function grabData(groups, entry) {
 
             if (!entry.group) await fs.appendFile(".logcache", `${key} ${hash(summary)} ${entry.zigVersion} ${entry.zlsVersion}\n`);
             entry.group = hash(summary);
-            if (!groups.has(entry.group)) groups.set(entry.group, new Group(entry.group, summary));
+            if (!groups.has(entry.group)) groups.set(entry.group, new Group(entry.group, panic, summary));
             resolve();
         });
     });
@@ -374,4 +381,64 @@ export function getObject(key) {
         Bucket: "fuzzing-output",
         Key: key,
     }));
+}
+
+export function deleteEntryRemote(baseKey) {
+    return client.send(new DeleteObjectsCommand({
+        Bucket: "fuzzing-output",
+        Delete: {
+            Objects: [
+                {
+                    Key: `${baseKey}/info`
+                },
+                {
+                    Key: `${baseKey}/stderr.log`
+                },
+                {
+                    Key: `${baseKey}/stdin.log`
+                },
+                {
+                    Key: `${baseKey}/stdout.log`
+                },
+                {
+                    Key: `${baseKey}/principal.zig`
+                }
+            ]
+        }
+    }));
+}
+
+const arrayChunks = (array, chunkSize) => Array(Math.ceil(array.length / chunkSize)).fill().map((_, index) => index * chunkSize).map(begin => array.slice(begin, begin + chunkSize));
+
+export function deleteEntriesRemote(baseKeys) {
+    const objects = [];
+
+    for (const baseKey of baseKeys) {
+        objects.push(
+            {
+                Key: `${baseKey}/info`
+            },
+            {
+                Key: `${baseKey}/stderr.log`
+            },
+            {
+                Key: `${baseKey}/stdin.log`
+            },
+            {
+                Key: `${baseKey}/stdout.log`
+            },
+            {
+                Key: `${baseKey}/principal.zig`
+            }
+        );
+    }
+
+    const chunks = arrayChunks(objects, 995);
+
+    return chunks.map(chunk => client.send(new DeleteObjectsCommand({
+        Bucket: "fuzzing-output",
+        Delete: {
+            Objects: chunk
+        }
+    })));
 }

@@ -44,6 +44,12 @@
                     <a href="/entry/<%= +entry.lastModified %>/stdout.log">Output</a>
                     <a href="/entry/<%= +entry.lastModified %>/principal.zig">Principal</a>
                 </p>
+
+                <% if (session.isZigtoolsMember) { %>
+                    <p>
+                        <button onclick="(async () => {await fetch(`/entry/<%= +entry.lastModified %>/delete?csrf=<%= session.csrf %>`, {method: `POST`}); this.closest(`.dropdown`).remove();})()" class="danger">Delete</button>
+                    </p>
+                <% } %>
             </div>
         </div>
     <% } %>

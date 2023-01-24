@@ -45,9 +45,16 @@ html, body {
     }
 
     &__links {
-        a {
-            color: white;
+        display: flex;
+
+        gap: 20px;
+
+        &>* {
             font-size: 18pt;
+        }
+
+        * {
+            color: white;
         }
     }
 }
@@ -177,4 +184,29 @@ main {
             gap: 20px;
         }
     }
+}
+
+button, .btn {
+    display: inline-block;
+
+    // border: 3px solid ;
+    border-radius: 7px;
+
+    padding: 12px 32px;
+
+    color: black;
+    font-size: 18px;
+    font-family: "Inter";
+    font-weight: 700;
+    text-decoration: none;
+
+    background-color: rgb(191, 191, 191);
+
+    &.danger {
+        border: none;
+        color: white;
+        background-color: hsl(0, 50%, 50%);
+    }
+
+    cursor: pointer;
 }

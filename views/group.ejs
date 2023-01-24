@@ -3,6 +3,13 @@
 <main>
     <h1>Group <%= group.hash %></h1>
 
+    <% if (session.isZigtoolsMember) { %>
+        <p style="text-align: right;">
+            <a href="<%- newGithubIssueUrl({user: `zigtools`, repo: `zls`, title: `Crash i${group.summary.slice(1)}`, body: include(`partials/issue.ejs`, {group}), labels: [`fuzzing result`]}) %>" class="btn" target="_blank">Open New Issue</a>
+            <button onclick="(async () => {await fetch(`/group/<%= group.hash %>/delete?csrf=<%= session.csrf %>`, {method: `POST`}); location.pathname = `/`;})()" class="danger">Delete</button>
+        </p>
+    <% } %>
+
     <%- include("partials/entries.ejs", {entries: group.entries}) %>
 </main>
 

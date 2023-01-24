@@ -1,0 +1,20 @@
+<%
+    const entry = sortLastModified(group.entries)[0];
+%>
+[Fuzzing group for this issue ↗](<%= site %>/group/<%= group.hash %>) (<%= group.hash %>)
+
+The following pieces of information may be outdated; please go to the fuzzing webpage to obtain newer samples if that is the case.
+
+## Generic error output
+
+```log
+<%= group.full %>
+```
+
+## Latest (at time of filling) entry
+
+|  | Zig | ZLS
+| --- | --- | --- |
+| Versions | <%= entry.zigVersion %> | <%= entry.zlsVersion %> |
+| Files | [Error ↗](<%= site %>/entry/<%= +entry.lastModified %>/stderr.log) | [Input ↗](<%= site %>/entry/<%= +entry.lastModified %>/stdin.log) |
+|  | [Output ↗](<%= site %>/entry/<%= +entry.lastModified %>/stdout.log) | [Zig Repro ↗](<%= site %>/entry/<%= +entry.lastModified %>/principal.zig) |
