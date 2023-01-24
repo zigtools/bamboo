@@ -12,9 +12,10 @@ let { repos, entries, entryMap } = await update();
 createGroupings(groups, entries);
 
 // Pull new data every 5 minutes
+// TODO: Optimize this to only fetch new entries
 setInterval(async () => {
     let newGroups = new Map();
-    let { newRepos, newEntries, newEntryMap } = await update();
+    let { repos: newRepos, entries: newEntries, entryMap: newEntryMap } = await update();
     await createGroupings(newGroups, newEntries);
 
     repos = newRepos;
