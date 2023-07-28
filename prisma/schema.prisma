@@ -1,0 +1,48 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Repo {
+    id       Int      @id @default(autoincrement())
+    owner    String
+    repo     String
+    branches Branch[]
+}
+
+model Branch {
+    id      Int      @id @default(autoincrement())
+    repo    Repo     @relation(fields: [repoId], references: [id])
+    repoId  Int
+    name    String
+    commits Commit[]
+}
+
+model Commit {
+    id       Int     @id @default(autoincrement())
+    hash     String
+    branch   Branch  @relation(fields: [branchId], references: [id])
+    branchId Int
+    entries  Entry[]
+}
+
+model Entry {
+    id           Int      @id @default(autoincrement())
+    bucketObject String
+    createdAt    DateTime @default(now())
+
+    summary    String
+    zigVersion String
+    zlsVersion String
+
+    commit   Commit @relation(fields: [commitId], references: [id])
+    commitId Int
+
+    group   Group @relation(fields: [groupId], references: [id])
+    groupId Int
+}
+
+model Group {
+    id      Int     @id @default(autoincrement())
+    entries Entry[]
+}
