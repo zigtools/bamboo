@@ -1,8 +1,7 @@
-# bamboo
+# bamboo (fuzzing.zigtools.org)
 
-Our fuzzing frontend.
+Server that processes and serves fuzzing data collected with [sus](https://github.com/zigtools/sus) and uploaded via the [`fuzz` action](https://github.com/zigtools/zls/blob/master/.github/workflows/fuzz.yml).
 
-## Goals
+## Running
 
-- Simple frontend that makes navigating, catching, replicating, and resolving fuzzing issues simple on master or any branch / PR!
-- API that makes our fuzzing data easily accessible from say... an issue linking bot? :P
+`docker compose --env-file=.env up [-d]`

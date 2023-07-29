@@ -1,25 +1,7 @@
-import express from "express";
-import archiver from "archiver";
-import { createGzip, createInflateRaw } from "zlib";
-import { randomBytes } from "crypto";
-import axios from "axios";
-import session from "express-session";
-import newGithubIssueUrl from "new-github-issue-url";
-import postgres from "postgres"
-import { S3 } from "@aws-sdk/client-s3";
-import dotenv from "dotenv"
+import { randomBytes } from 'crypto'
+import { createGzip, createInflateRaw } from 'zlib'
 
-dotenv.config()
-
-const app = express();
-
-app.use(express.static("static"));
-app.use(session({
-    secret: randomBytes(64).toString("hex"),
-    resave: false,
-    saveUninitialized: false,
-}));  
-
+import { S3 } from '@aws-sdk/client-s3'
 // const utils = {
 //     sortLastModified(anything) {
 //         return (Array.isArray(anything) ? anything : [...anything]).sort((a, b) => b.lastModified - a.lastModified);
@@ -43,28 +25,45 @@ app.use(session({
 
 //     res.locals.session = req.session;
 //     next();
-// });  
+// });
 
-const sql = postgres({
-    host: 'localhost',
-    port: 5432,
-    database: 'bamboo',
-    username: 'zigtools',
-});
+import { PrismaClient } from '@prisma/client'
+import archiver from 'archiver'
+import axios from 'axios'
+import dotenv from 'dotenv'
+import express from 'express'
+import session from 'express-session'
+import newGithubIssueUrl from 'new-github-issue-url'
+
+dotenv.config()
+
+const app = express()
+
+app.use(express.static('static'))
+app.use(
+    session({
+        secret: randomBytes(64).toString('hex'),
+        resave: false,
+        saveUninitialized: false,
+    })
+)
+
+const prisma = new PrismaClient()
 
 const bucketClient = new S3({
     forcePathStyle: false,
-    endpoint: "https://nyc3.digitaloceanspaces.com",
-    region: "us-east-1",
+    endpoint: process.env.ENDPOINT,
+    region: process.env.BUCKET_REGION,
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    }
-});
+        accessKeyId: process.env.BUCKET_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.BUCKET_SECRET_ACCESS_KEY!,
+    },
+})
 
-(async () => {
-console.log(await sql`SELECT * FROM information_schema.tables`)
-})()
+/**
+ * Upload a fuzzing result to database/bucket
+ */
+app.post('/ingest', (req, res) => {})
 
 // app.get("/", (req, res) => {
 //     res.render("index.ejs", {
@@ -74,11 +73,6 @@ console.log(await sql`SELECT * FROM information_schema.tables`)
 //         ...utils,
 //     });
 // });
-
-// /**
-//  * Upload a fuzzing result to database/bucket
-//  */
-// app.post("/upload")
 
 // app.get("/group/:group", (req, res) => {
 //     const group = groups.get(req.params.group);
@@ -124,7 +118,7 @@ console.log(await sql`SELECT * FROM information_schema.tables`)
 
 //     const branch = repo.branches.get(req.params.branch);
 //     if (!branch) return res.status(404).send("404");
-    
+
 //     const commit = branch.commits.get(req.params.commit);
 //     if (!commit) return res.status(404).send("404");
 
@@ -262,7 +256,7 @@ console.log(await sql`SELECT * FROM information_schema.tables`)
 //     req.session.username = login;
 //     req.session.isZigtoolsMember = !!orgs.find(_ => _.login === "zigtools");
 //     req.session.csrf = randomBytes(64).toString("hex");
-    
+
 //     // Bypass http redirect sometimes blocking cookies
 //     res.status(200).contentType("html").send(
 //         `<!DOCTYPE html>
@@ -291,20 +285,20 @@ console.log(await sql`SELECT * FROM information_schema.tables`)
 //     }
 
 //     next();
-// });  
+// });
 
 // /**
-//  * @param {Entry} entry 
+//  * @param {Entry} entry
 //  */
 // function deleteEntryLocal(entry) {
 //     const commit = entry.commit;
-    
+
 //     if (!entryMap.delete("" + (+entry.lastModified))) console.error("Could not delete entry (map)");
 //     const i1 = entries.indexOf(entry);
 //     if (i1 !== -1) {
 //         entries.splice(i1, 1);
 //     } else console.error("Could not delete entry (list)");
-    
+
 //     const i2 = commit.entries.indexOf(entry);
 //     if (i2 !== -1) {
 //         commit.entries.splice(i2, 1);
@@ -326,7 +320,7 @@ console.log(await sql`SELECT * FROM information_schema.tables`)
 // }
 
 // /**
-//  * @param {Entry} entry 
+//  * @param {Entry} entry
 //  */
 // async function deleteEntry(entry) {
 //     deleteEntryLocal(entry);
@@ -334,14 +328,14 @@ console.log(await sql`SELECT * FROM information_schema.tables`)
 // }
 
 // /**
-//  * @param {Group} group 
+//  * @param {Group} group
 //  */
 // async function deleteGroup(group) {
 //     await deleteEntriesRemote(group.entries.map(genBaseKey));
 //     while (group.entries.length !== 0) {
 //         deleteEntryLocal(group.entries[0]);
 //     }
-//     groups.delete(group.hash); 
+//     groups.delete(group.hash);
 // }
 
 // app.post("/entry/:entry/delete", async (req, res) => {
@@ -362,6 +356,6 @@ console.log(await sql`SELECT * FROM information_schema.tables`)
 //     res.status(200).end();
 // });
 
-// app.listen(1313, "127.0.0.1", () => {
-//     console.log(`Live at ${process.env.SITE}!`);
-// });
+app.listen(1313, () => {
+    console.log('Live!')
+})

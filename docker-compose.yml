@@ -1,0 +1,41 @@
+version: "3.8"
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      - SITE_ADDRESS=${SITE_ADDRESS}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./Caddyfile:/etc/caddy/Caddyfile"
+      - caddy-data:/data
+      - caddy-config:/config
+  web:
+    build: .
+    working_dir: /app
+    image: node:20-alpine3.17
+    command: sh -c "npm install && npx ts-node src/index.ts"
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://zigtools:${POSTGRES_PASSWORD}@postgres/fuzzing
+      - BUCKET_ENDPOINT=${BUCKET_ENDPOINT}
+      - BUCKET_REGION=${BUCKET_REGION}
+      - BUCKET_ACCESS_KEY_ID=${BUCKET_ACCESS_KEY_ID}
+      - BUCKET_SECRET_ACCESS_KEY=${BUCKET_SECRET_ACCESS_KEY}
+  postgres:
+    image: postgres:15.3-alpine3.17
+    environment:
+      POSTGRES_USER: zigtools
+      POSTGRES_DB: fuzzing
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: 
+      - postgres:/var/lib/postgresql/data
+volumes:
+  postgres:
+  caddy-data:
+  caddy-config:
