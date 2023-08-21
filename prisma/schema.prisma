@@ -8,45 +8,44 @@ generator client {
 }
 
 model Repo {
-    id       Int      @id @default(autoincrement())
+    id       String   @id
     owner    String
     repo     String
     branches Branch[]
 }
 
 model Branch {
-    id      Int      @id @default(autoincrement())
+    id      String   @id
     repo    Repo     @relation(fields: [repoId], references: [id])
-    repoId  Int
+    repoId  String
     name    String
     commits Commit[]
 }
 
 model Commit {
-    id       Int     @id @default(autoincrement())
+    id       String  @id
     hash     String
     branch   Branch  @relation(fields: [branchId], references: [id])
-    branchId Int
+    branchId String
     entries  Entry[]
 }
 
 model Entry {
-    id           Int      @id @default(autoincrement())
-    bucketObject String
-    createdAt    DateTime @default(now())
+    id        String   @id
+    createdAt DateTime
 
-    summary    String
     zigVersion String
     zlsVersion String
 
     commit   Commit @relation(fields: [commitId], references: [id])
-    commitId Int
+    commitId String
 
-    group   Group @relation(fields: [groupId], references: [id])
-    groupId Int
+    group   Group  @relation(fields: [groupId], references: [id])
+    groupId String
 }
 
 model Group {
-    id      Int     @id @default(autoincrement())
+    id      String  @id
+    summary String
     entries Entry[]
 }

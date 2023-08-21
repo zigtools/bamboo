@@ -1,5 +1,5 @@
 <div class="list">
-    <% for (const entry of sortLastModified(entries)) { %>
+    <% for (const entry of entries) { %>
         <%
             const commit = entry.commit;
             const branch = commit.branch;
@@ -7,24 +7,24 @@
         %>
         <div class="dropdown">
             <div class="summary">
-                <code><%= groups.get(entry.group).summary %></code>
+                <code><%= entry.group.summary %></code>
                 <div>
-                    <time><%= +entry.lastModified %></time>
+                    <time><%= +entry.createdAt %></time>
                 </div>
             </div>
 
             <div class="details">
                 <p>
                     <code>
-                        <a href="/repo/<%= repo.username %>/<%= repo.repoName %>"><%= repo.username %>/<%= repo.repoName %></a>
-                        -> <a href="/repo/<%= repo.username %>/<%= repo.repoName %>/<%= branch.name %>"><%= branch.name %></a>
-                        -> <a href="/repo/<%= repo.username %>/<%= repo.repoName %>/<%= branch.name %>/commit/<%= commit.sha %>"><%= commit.sha %></a>
+                        <a href="/repo/<%= repo.id %>"><%= repo.owner %>/<%= repo.repo %></a>
+                        -> <a href="/branch/<%= branch.id %>"><%= branch.name %></a>
+                        -> <a href="/commit/<%= commit.id %>"><%= commit.hash %></a>
                     </code>
                 </p>
 
                 <p>
                     <code>
-                        In <a href="/group/<%= entry.group %>">group <%= entry.group %></a>
+                        In <a href="/group/<%= entry.group.id %>">group <%= entry.group.id %></a>
                     </code>
                 </p>
 
@@ -36,13 +36,13 @@
                 <p class="link-list">
                     <span>
                         Complete Archive
-                        (<a href="/entry/<%= +entry.lastModified %>.tar.gz">.tar.gz</a>)
-                        (<a href="/entry/<%= +entry.lastModified %>.zip">.zip</a>)
+                        (<a href="/entry/<%= entry.id %>.tar.gz">.tar.gz</a>)
+                        (<a href="/entry/<%= entry.id %>.zip">.zip</a>)
                     </span>
-                    <a href="/entry/<%= +entry.lastModified %>/stderr.log">Error</a>
-                    <a href="/entry/<%= +entry.lastModified %>/stdin.log">Input</a>
-                    <a href="/entry/<%= +entry.lastModified %>/stdout.log">Output</a>
-                    <a href="/entry/<%= +entry.lastModified %>/principal.zig">Principal</a>
+                    <a href="/entry/<%= entry.id %>/stderr.log">Error</a>
+                    <a href="/entry/<%= entry.id %>/stdin.log">Input</a>
+                    <a href="/entry/<%= entry.id %>/stdout.log">Output</a>
+                    <a href="/entry/<%= entry.id %>/principal.zig">Principal</a>
                 </p>
 
                 <% if (session.isZigtoolsMember) { %>

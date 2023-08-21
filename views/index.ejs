@@ -4,36 +4,40 @@
     <h1>Repositories</h1>
 
     <div class="list">
-        <% for (const repo of sortLastModified(repos.values())) { %>
-            <a href="/repo/<%= repo.username %>/<%= repo.repoName %>">
-                <div class="summary">
-                    <h2><%= repo.username %> / <%= repo.repoName %></h2>
-                    <div>
-                        <span><%= repo.branches.size %> branches &bull; <time><%= +repo.lastModified %></time></span>
-                    </div>
+        <% for (const repo of repos.sort((a, b) => +b.branches[0].commits[0].entries[0].createdAt -
+        +a.branches[0].commits[0].entries[0].createdAt)) { %>
+        <a href="/repo/<%= repo.id %>">
+            <div class="summary">
+                <h2><%= repo.owner %> / <%= repo.repo %></h2>
+                <div>
+                    <span
+                        ><%= repo.branches[0].commits[0]._count.entries %> branches &bull;
+                        <time><%= +repo.branches[0].commits[0].entries[0].createdAt %></time></span
+                    >
                 </div>
-            </a>
+            </div>
+        </a>
         <% } %>
     </div>
 
     <h1>Failure Groups</h1>
 
     <p>
-        Failures are grouped based on the error location and content.
-        These may not be entirely accurate and may occasionally shift when code is modified,
-        but they are very useful for finding common issues and determining like causality.
+        Failures are grouped based on the error location and content. These may not be entirely accurate and may
+        occasionally shift when code is modified, but they are very useful for finding common issues and determining
+        like causality.
     </p>
 
     <div class="list">
-        <% for (const group of [...groups].sort((a, b) => b[1].lastModified - a[1].lastModified)) { %>
-            <a href="/group/<%= group[0] %>">
-                <div class="summary">
-                    <code><%= group[1].summary %></code>
-                    <div>
-                        <span><%= group[1].entries.length %> &bull; <time><%= +group[1].lastModified %></time></span>
-                    </div>
+        <% for (const group of groups.sort((a, b) => +b.entries[0].createdAt - +a.entries[0].createdAt)) { %>
+        <a href="/group/<%= group.id %>">
+            <div class="summary">
+                <code><%= group.summary %></code>
+                <div>
+                    <span><%= group._count.entries %> &bull; <time><%= +group.entries[0].createdAt %></time></span>
                 </div>
-            </a>
+            </div>
+        </a>
         <% } %>
     </div>
 </main>

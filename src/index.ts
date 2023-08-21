@@ -1,58 +1,97 @@
-import { randomBytes } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
 import { createGzip, createInflateRaw } from 'zlib'
 
 import { S3 } from '@aws-sdk/client-s3'
-// const utils = {
-//     sortLastModified(anything) {
-//         return (Array.isArray(anything) ? anything : [...anything]).sort((a, b) => b.lastModified - a.lastModified);
-//     },
-//     newGithubIssueUrl,
-//     site: process.env.SITE,
-// };
-
-// app.use(function (req, res, next) {
-//     if (process.env.SITE === "http://127.0.0.1:1313") {
-//         if (req.query.localGuest !== undefined) {
-//             req.session.username = "localuser";
-//             req.session.isZigtoolsMember = false;
-//             req.session.csrf = randomBytes(64).toString("hex");
-//         } else if (req.query.localMember !== undefined) {
-//             req.session.username = "localuser";
-//             req.session.isZigtoolsMember = true;
-//             req.session.csrf = randomBytes(64).toString("hex");
-//         }
-//     }
-
-//     res.locals.session = req.session;
-//     next();
-// });
-
 import { PrismaClient } from '@prisma/client'
 import archiver from 'archiver'
 import axios from 'axios'
 import dotenv from 'dotenv'
 import express from 'express'
-import session from 'express-session'
-import newGithubIssueUrl from 'new-github-issue-url'
+import expressFileUpload from 'express-fileupload'
+import expressSession from 'express-session'
 
 dotenv.config()
 
 const app = express()
 
+declare module 'express-session' {
+    interface SessionData {
+        csrf?: string
+        username: string
+        isZigtoolsMember?: boolean
+    }
+}
+
+const utils = {
+    newGithubIssueUrl(options: any = {}) {
+        let repoUrl
+        if (options.repoUrl) {
+            repoUrl = options.repoUrl
+        } else if (options.user && options.repo) {
+            repoUrl = `https://github.com/${options.user}/${options.repo}`
+        } else {
+            throw new Error('You need to specify either the `repoUrl` option or both the `user` and `repo` options')
+        }
+
+        const url = new URL(`${repoUrl}/issues/new`)
+
+        const types = ['body', 'title', 'labels', 'template', 'milestone', 'assignee', 'projects']
+
+        for (const type of types) {
+            let value = options[type]
+            if (value === undefined) {
+                continue
+            }
+
+            if (type === 'labels' || type === 'projects') {
+                if (!Array.isArray(value)) {
+                    throw new TypeError(`The \`${type}\` option should be an array`)
+                }
+
+                value = value.join(',')
+            }
+
+            url.searchParams.set(type, value)
+        }
+
+        return url.toString()
+    },
+    site: process.env.SITE,
+}
+
 app.use(express.static('static'))
+app.use(expressFileUpload())
 app.use(
-    session({
+    expressSession({
         secret: randomBytes(64).toString('hex'),
         resave: false,
         saveUninitialized: false,
     })
 )
 
+app.use(function (req, res, next) {
+    if (process.env.SITE === 'http://127.0.0.1:1313') {
+        let session = req.session
+        if (req.query.localGuest !== undefined) {
+            session.username = 'localuser'
+            session.isZigtoolsMember = false
+            session.csrf = randomBytes(64).toString('hex')
+        } else if (req.query.localMember !== undefined) {
+            session.username = 'localuser'
+            session.isZigtoolsMember = true
+            session.csrf = randomBytes(64).toString('hex')
+        }
+    }
+
+    res.locals.session = req.session
+    next()
+})
+
 const prisma = new PrismaClient()
 
 const bucketClient = new S3({
     forcePathStyle: false,
-    endpoint: process.env.ENDPOINT,
+    endpoint: process.env.BUCKET_ENDPOINT,
     region: process.env.BUCKET_REGION,
     credentials: {
         accessKeyId: process.env.BUCKET_ACCESS_KEY_ID!,
@@ -60,42 +99,256 @@ const bucketClient = new S3({
     },
 })
 
+function hash(data: string | NodeJS.ArrayBufferView) {
+    return createHash('sha256').update(data).digest('hex')
+}
+
+function simplifyPath(where: string) {
+    const zlsLoc = '/home/runner/work'
+    const zigLoc = '/opt/hostedtoolcache/zig'
+    if (where.startsWith(zlsLoc)) return where.slice(where.lastIndexOf('zls/'))
+    if (where.startsWith(zigLoc)) return `zig/${where.slice(where.indexOf('x64/') + 4)}`
+    return where
+}
+
 /**
  * Upload a fuzzing result to database/bucket
  */
-app.post('/ingest', (req, res) => {})
+app.post('/ingest', async (req, res) => {
+    if (req.files) {
+        const files: expressFileUpload.UploadedFile[] = (
+            Array.isArray(req.files) ? req.files.entries : [req.files.entries]
+        ) as any
+        for (const file of files) {
+            let index = 0
 
-// app.get("/", (req, res) => {
-//     res.render("index.ejs", {
-//         repos,
-//         groups,
+            const createdAt = new Date(Number(file.data.readBigInt64LE(index)))
+            index += 8
 
-//         ...utils,
-//     });
-// });
+            const zigVersionLength = file.data.readInt8(index)
+            index += 1
 
-// app.get("/group/:group", (req, res) => {
-//     const group = groups.get(req.params.group);
-//     if (!group) return res.status(404).send("404");
+            const zigVersion = new TextDecoder().decode(file.data.subarray(index, index + zigVersionLength))
+            index += zigVersionLength
 
-//     res.render("group.ejs", {
-//         groups,
-//         group,
+            const zlsVersionLength = file.data.readInt8(index)
+            index += 1
 
-//         ...utils,
-//     });
-// });
+            const zlsVersion = new TextDecoder().decode(file.data.subarray(index, index + zlsVersionLength))
+            index += zlsVersionLength
 
-// app.get("/repo/:username/:repoName", (req, res) => {
-//     const repo = repos.get(`${req.params.username}/${req.params.repoName}`);
-//     if (!repo) return res.status(404).send("404");
+            for (let i = 0; i < 3; i++) index += file.data.readInt32LE(index) + 4
 
-//     res.render("repo.ejs", {
-//         repo,
+            let stderrLength = file.data.readInt32LE(index)
+            index += 4
 
-//         ...utils,
-//     });
-// });
+            const panicRegex = /panic:.*?\n(.*.zig):(\d*):(\d*).*?\n(.*)/
+            const stderr = new TextDecoder().decode(file.data.subarray(index, index + stderrLength))
+
+            let summary: string
+            const crashLocation = stderr.match(panicRegex)
+
+            if (crashLocation) {
+                summary = `In ${simplifyPath(crashLocation[1])}:${crashLocation[2]}:${
+                    crashLocation[3]
+                }; \`${crashLocation[4].trim()}\``
+            } else {
+                summary = 'No summary available'
+                return
+            }
+
+            const repoId = hash(`${req.body.owner}/${req.body.repo}`)
+            await prisma.repo.upsert({
+                create: {
+                    id: repoId,
+                    owner: req.body.owner,
+                    repo: req.body.repo,
+                },
+                update: {},
+                where: {
+                    id: repoId,
+                },
+            })
+
+            const branchId = hash(`${req.body.owner}/${req.body.repo}/${req.body.branch}`)
+            await prisma.branch.upsert({
+                create: {
+                    id: branchId,
+                    name: req.body.branch,
+                    repoId,
+                },
+                update: {},
+                where: {
+                    id: branchId,
+                },
+            })
+
+            const commitId = hash(`${req.body.owner}/${req.body.repo}/${req.body.branch}/${req.body.commit}`)
+            await prisma.commit.upsert({
+                create: {
+                    id: commitId,
+                    hash: req.body.commit,
+                    branchId,
+                },
+                update: {},
+                where: {
+                    id: commitId,
+                },
+            })
+
+            const groupId = hash(summary)
+            await prisma.group.upsert({
+                create: {
+                    id: groupId,
+                    summary,
+                },
+                update: {},
+                where: {
+                    id: groupId,
+                },
+            })
+
+            const entry = await prisma.entry.create({
+                data: {
+                    id: hash(file.data),
+                    createdAt,
+
+                    zigVersion,
+                    zlsVersion,
+
+                    commitId,
+
+                    groupId,
+                },
+            })
+
+            await bucketClient.putObject({
+                Bucket: process.env.BUCKET,
+                Key: entry.id,
+                Body: file.data,
+                Metadata: {
+                    'x-owner': req.body.owner,
+                    'x-repo': req.body.repo,
+                    'x-branch': req.body.branch,
+                    'x-commit': req.body.commit,
+                },
+                ACL: 'public-read',
+            })
+        }
+    }
+
+    res.status(200).send()
+})
+
+app.get('/', async (req, res) => {
+    const repos = await prisma.repo.findMany({
+        select: {
+            id: true,
+            owner: true,
+            repo: true,
+            branches: {
+                select: {
+                    commits: {
+                        select: {
+                            entries: {
+                                select: {
+                                    createdAt: true,
+                                },
+                                orderBy: {
+                                    createdAt: 'desc',
+                                },
+                                take: 1,
+                            },
+                            _count: {
+                                select: {
+                                    entries: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    })
+
+    const groups = await prisma.group.findMany({
+        select: {
+            id: true,
+            summary: true,
+            entries: {
+                select: {
+                    createdAt: true,
+                },
+                orderBy: {
+                    createdAt: 'desc',
+                },
+                take: 1,
+            },
+            _count: {
+                select: {
+                    entries: true,
+                },
+            },
+        },
+    })
+
+    res.render('index.ejs', {
+        repos,
+        groups,
+
+        ...utils,
+    })
+})
+
+app.get('/group/:id', async (req, res) => {
+    const group = await prisma.group.findUnique({
+        where: {
+            id: req.params.id,
+        },
+        include: {
+            entries: {
+                include: {
+                    group: {
+                        select: {
+                            id: true,
+                            summary: true,
+                        },
+                    },
+                    commit: {
+                        include: {
+                            branch: {
+                                include: {
+                                    commits: true,
+                                    repo: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    })
+    if (!group) return res.status(404).send('404')
+
+    res.render('group.ejs', {
+        group,
+        ...utils,
+    })
+})
+
+app.get('/repo/:id', (req, res) => {
+    const repo = prisma.repo.findUnique({
+        where: {
+            id: req.params.id,
+        },
+    })
+    if (!repo) return res.status(404).send('404')
+
+    res.render('repo.ejs', {
+        repo,
+        ...utils,
+    })
+})
 
 // app.get("/repo/:username/:repoName/:branch", (req, res) => {
 //     const repo = repos.get(`${req.params.username}/${req.params.repoName}`);
@@ -207,85 +460,100 @@ app.post('/ingest', (req, res) => {})
 
 // // Authenticated actions
 
-// /**
-//  * Map from state to referer
-//  * @type {Map<string, string>}
-//  */
-// let states = new Map();
+let states: Map<string, string> = new Map()
+app.get('/login', (req, res) => {
+    const state = randomBytes(64).toString('hex')
+    states.set(state, (req.headers.referer || process.env.SITE)!)
+    res.redirect(
+        `https://github.com/login/oauth/authorize?client_id=${process.env.GH_CLIENT_ID}&scope=read:org&state=${state}`
+    )
+})
 
-// app.get("/login", (req, res) => {
-//     const state = randomBytes(64).toString("hex");
-//     states.set(state, req.headers.referer || process.env.SITE);
-//     // ${process.env.DOMAIN ? "" : "&redirect_uri=http://127.0.0.1:1313/oauth"}
-//     res.redirect(`https://github.com/login/oauth/authorize?client_id=${process.env.GH_CLIENT_ID}&scope=read:org&state=${state}`);
-// });
+app.get('/oauth', async (req, res) => {
+    const code = req.query.code as string
+    const state = req.query.state as string
 
-// app.get("/oauth", async (req, res) => {
-//     const { code, state } = req.query;
+    const redir = states.get(state)
 
-//     const redir = states.get(state);
+    if (!redir) {
+        return res.status(403).send('Invalid state')
+    }
 
-//     if (!redir) {
-//         return res.status(403).send("Invalid state");
-//     }
+    states.delete(state)
 
-//     states.delete(state);
+    const { access_token: accessToken } = (
+        await axios.post(
+            'https://github.com/login/oauth/access_token',
+            {
+                client_id: process.env.GH_CLIENT_ID,
+                client_secret: process.env.GH_CLIENT_SECRET,
+                code,
+            },
+            {
+                headers: {
+                    Accept: 'application/json',
+                },
+            }
+        )
+    ).data
 
-//     const { access_token: accessToken } = (await axios.post("https://github.com/login/oauth/access_token", {
-//         client_id: process.env.GH_CLIENT_ID,
-//         client_secret: process.env.GH_CLIENT_SECRET,
-//         code,
-//     }, {
-//         headers: {
-//             Accept: "application/json"
-//         }
-//     })).data;
+    const { login } = (
+        await axios.get('https://api.github.com/user', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        })
+    ).data
 
-//     const { login } = (await axios.get("https://api.github.com/user", {
-//         headers: {
-//             Authorization: `Bearer ${accessToken}`
-//         }
-//     })).data;
+    const orgs = (
+        await axios.get('https://api.github.com/user/orgs', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        })
+    ).data
 
-//     const orgs = (await axios.get("https://api.github.com/user/orgs", {
-//         headers: {
-//             Authorization: `Bearer ${accessToken}`
-//         }
-//     })).data;
+    let session = req.session
+    session.username = login
+    session.isZigtoolsMember = !!orgs.find((_: any) => _.login === 'zigtools')
+    session.csrf = randomBytes(64).toString('hex')
 
-//     req.session.username = login;
-//     req.session.isZigtoolsMember = !!orgs.find(_ => _.login === "zigtools");
-//     req.session.csrf = randomBytes(64).toString("hex");
+    // Bypass http redirect sometimes blocking cookies
+    res.status(200)
+        .contentType('html')
+        .send(
+            `<!DOCTYPE html>
+        <html>
+        <head><meta http-equiv="refresh" content="0; url='${redir}'"></head>
+        <body></body>
+        </html>
+        `
+        )
+})
 
-//     // Bypass http redirect sometimes blocking cookies
-//     res.status(200).contentType("html").send(
-//         `<!DOCTYPE html>
-//         <html>
-//         <head><meta http-equiv="refresh" content="0; url='${redir}'"></head>
-//         <body></body>
-//         </html>
-//         `
-//     );
-// });
+app.get('/logout', async (req, res) => {
+    req.session.destroy(() => {
+        res.redirect((req.headers.referer || process.env.SITE)!)
+    })
+})
 
-// app.get("/logout", async (req, res) => {
-//     req.session.destroy(() => {
-//         res.redirect(req.headers.referer || process.env.SITE);
-//     });
-// });
+app.use(function (req, res, next) {
+    if (!req.session.isZigtoolsMember) {
+        return res.status(403).send('Not a zigtools member!')
+    }
+    next()
+})
 
-// // CSRF token and ability check beyond this point
-// app.use(function (req, res, next) {
-//     if (req.query.csrf !== req.session.csrf) {
-//         return res.status(403).send("Invalid CSRF token!");
-//     }
+app.get('/ingest', (req, res) => {
+    res.render('ingest.ejs')
+})
 
-//     if (!req.session.isZigtoolsMember) {
-//         return res.status(403).send("Not a zigtools member!");
-//     }
-
-//     next();
-// });
+app.use(function (req, res, next) {
+    if (req.query.csrf !== req.session.csrf) {
+        return res.status(403).send('Invalid CSRF token!')
+    }
+    next()
+})
 
 // /**
 //  * @param {Entry} entry
@@ -357,5 +625,5 @@ app.post('/ingest', (req, res) => {})
 // });
 
 app.listen(1313, () => {
-    console.log('Live!')
+    console.log('Live at http://localhost:1313')
 })
