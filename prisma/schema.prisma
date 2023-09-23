@@ -8,26 +8,34 @@ generator client {
 }
 
 model Repo {
-    id       String   @id
     owner    String
-    repo     String
+    name     String
     branches Branch[]
+
+    @@unique([owner, name])
 }
 
 model Branch {
-    id      String   @id
-    repo    Repo     @relation(fields: [repoId], references: [id])
-    repoId  String
+    owner    String
+    repoName String
+    repo     Repo   @relation(fields: [owner, repoName], references: [owner, name])
+
     name    String
     commits Commit[]
+
+    @@unique([owner, repoName, name])
 }
 
 model Commit {
-    id       String  @id
-    hash     String
-    branch   Branch  @relation(fields: [branchId], references: [id])
-    branchId String
-    entries  Entry[]
+    owner      String
+    repoName   String
+    branchName String
+    branch     Branch @relation(fields: [owner, repoName, branchName], references: [owner, repoName, name])
+
+    hash    String
+    entries Entry[]
+
+    @@unique([owner, repoName, branchName, hash])
 }
 
 model Entry {
@@ -37,8 +45,11 @@ model Entry {
     zigVersion String
     zlsVersion String
 
-    commit   Commit @relation(fields: [commitId], references: [id])
-    commitId String
+    owner      String
+    repoName   String
+    branchName String
+    commitHash String
+    commit     Commit @relation(fields: [owner, repoName, branchName, commitHash], references: [owner, repoName, branchName, hash])
 
     group   Group  @relation(fields: [groupId], references: [id])
     groupId String
